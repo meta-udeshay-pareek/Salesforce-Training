@@ -1,0 +1,176 @@
+<apex:page controller="ShoppingCartController">
+    <apex:form >
+        <apex:outputPanel Id="purchaseHistory">
+            <apex:pageBlock title="Purchase Orders History" rendered="{! showPurchaseHistoryArea}">
+                <apex:pageBlockTable value="{!PurchaseOrders}" var="Po" Id="purchaseOrderTable" style="width:100%;">
+                    
+                    <apex:column value="{!Po.Id}">
+                        <apex:facet name="header">
+                            <apex:commandLink action="{!sortByOrderId}">
+                                PO ID
+                            </apex:commandLink>
+                        </apex:facet>
+                    </apex:column>
+                    
+                    <apex:column value="{!Po.Order_Price__c}">
+                        <apex:facet name="header">
+                            <apex:commandLink action="{!sortByOrderPrice}">
+                                Order Price
+                            </apex:commandLink>
+                        </apex:facet>
+                    </apex:column>
+                    
+                    <apex:column value="{!Po.Order_Status__c}">
+                        <apex:facet name="header">
+                            <apex:commandLink action="{!sortByOrderStatus}">
+                               Order Status
+                            </apex:commandLink>
+                        </apex:facet>
+                    </apex:column>
+                  
+            	</apex:pageBlockTable>
+                
+                
+                <apex:commandButton action="{!first}" value="first" rendered="{!hasPrevious}" reRender="purchaseHistory"/>
+                <apex:commandButton disabled="{!NOT(hasPrevious)}" value="first" rendered="{!NOT(hasPrevious)}"/>
+                <apex:commandButton action="{!previous}" value="previous" rendered="{!hasPrevious}" reRender="purchaseHistory"/>
+                <apex:commandButton disabled="{!NOT(hasPrevious)}" value="previous" rendered="{!NOT(hasPrevious)}"/>
+                <apex:commandButton action="{!Next}" value="Next" rendered="{!hasNext }" reRender="purchaseHistory"/>
+                <apex:commandButton disabled="{!NOT(hasNext) }" value="Next"  rendered="{!NOT(hasNext)}"/>
+                <apex:commandButton action="{!last}" value="Last" rendered="{!hasNext}" reRender="purchaseHistory"/>
+                <apex:commandButton disabled="{! NOT(hasNext) }" value="Last" rendered="{!NOT(hasNext)}"/>
+                
+                <apex:outputText value=" {! IF(pageNumber==1 , 1 , ((pageNumber-1)*PageSize)+1)} -
+                                          	{! IF(resultSize>PageSize , IF(pageNumber==1,PageSize, IF(NOT(hasNext) && MOD(ResultSize,PageSize) != 0 , ResultSize , (pageNumber)*PageSize)) , resultSize)} of 
+                                                {!resultSize} "/>
+                
+    		</apex:pageBlock>
+        </apex:outputPanel>
+        
+        <apex:outputPanel Id="newOrderButton">
+            <div style="text-align:center;padding:8px;">
+                 <apex:commandButton value="Add New Purchase" action="{!NewPurchase}" reRender="productArea,newOrderButton" rendered="{!showNewOrderButton}"/>
+            </div>
+        </apex:outputPanel>
+        
+        <apex:outputPanel Id="productArea">
+            <apex:Pagemessages />
+            <apex:pageBlock title="Products" rendered="{!showProducts}">
+                
+                <table style="width:100%;">
+                    <tr>
+                        <td>
+                            <apex:inputText value="{!productTobeSearched}" html-placeholder="Search Products">
+                            	<apex:param assignTo="{!productTobeSearched}" value="{!productTobeSearched}" name="productTobeSearched"/>
+                                <apex:actionSupport event="onchange" action="{!search}" reRender="productArea"/>
+                            </apex:inputText>
+                        </td>
+                        <td align="right">
+                            <apex:commandButton value="Add To cart" action="{!addToCart}" reRender="productArea,cartArea"/>
+                        </td>
+                    </tr>
+                </table>
+                
+               <apex:pageBlockTable value="{!ProductWrapperList}" var="productWrp">
+                    <apex:column headerValue="Select Products">
+                        <apex:inputCheckbox value="{!productWrp.checked}" />
+                    </apex:column>
+                    <apex:column value="{! productWrp.product.Name}"/>
+                    <apex:column value="{! productWrp.product.ProductCode}"/>
+                    <apex:column value="{! productWrp.product.Description}"/>
+                    <apex:column value="{! productWrp.product.Price__c}" headerValue="Price Per Unit"/>
+                    <apex:column value="{! productWrp.availableQuantity}" headerValue="Quantity Available"/>
+               </apex:pageBlockTable>
+              
+                <apex:commandButton action="{!firstProductPage}" value="first" rendered="{!hasPreviousProductPage}" reRender="productArea"/>
+                <apex:commandButton disabled="{!NOT(hasPreviousProductPage)}" value="first" rendered="{!NOT(hasPreviousProductPage)}"/>
+                <apex:commandButton action="{!previousProductPage}" value="previous" rendered="{!hasPreviousProductPage}" reRender="productArea"/>
+                <apex:commandButton disabled="{!NOT(hasPreviousProductPage)}" value="previous" rendered="{!NOT(hasPreviousProductPage)}"/>
+                <apex:commandButton action="{!nextProductPage}" value="Next" rendered="{!hasNextProductPage}" reRender="productArea"/>
+                <apex:commandButton disabled="{!NOT(hasNextProductPage) }" value="Next"  rendered="{!NOT(hasNextProductPage)}"/>
+                <apex:commandButton action="{!lastProductPage}" value="Last" rendered="{!hasNextProductPage}" reRender="productArea"/>
+                <apex:commandButton disabled="{! NOT(hasNextProductPage) }" value="Last" rendered="{!NOT(hasNextProductPage)}"/>
+                
+               <apex:outputText value="{! IF(PageNumberProduct==1 , 1 , ((pageNumberProduct-1)*PageSizeProduct)+1)} -
+                                        {! IF(resultSizeProduct>PageSizeProduct , IF(pageNumberProduct==1,PageSizeProduct, IF(NOT(hasNextProductPage) && MOD(ResultSizeProduct,PageSizeProduct) != 0 , ResultSizeProduct , (pageNumberProduct)*PageSizeProduct)) , resultSizeProduct)} of 
+                                        {!resultSizeProduct} "/>
+            </apex:pageBlock>
+        </apex:outputPanel>
+        
+        <apex:outputPanel Id="cartArea">
+            <apex:pageBlock title="Cart Items" rendered="{!showcart}">
+                <apex:pageBlockButtons location="bottom">
+                   <div align="center">
+                      <apex:commandButton value="checkout" action="{! checkout}" reRender="productArea,cartArea,purchaseHistory,newOrderButton,checkoutArea"/> 
+                   </div>
+                </apex:pageBlockButtons>
+                
+                <apex:pageBlockTable value="{!ProductsInCart}" var="productInCart">
+                    <apex:column value="{!productInCart.product.Name}"/>
+                    <apex:column value="{!productInCart.product.ProductCode}"/>
+                    <apex:column value="{!productInCart.product.Price__c}" headerValue="Price Per Unit"/>
+                    <apex:column headerValue="Quantity">
+                        <apex:inputText value="{!productInCart.quantity}">
+                            <apex:actionSupport action="{! updateCart}" reRender="cartArea,productArea" event="onchange">
+                                <apex:param assignTo="{! selectedProduct}" value="{! productInCart.product.Id}" name="selectedProduct"/>
+                            </apex:actionSupport>
+                        </apex:inputText>
+                    </apex:column>
+                    <apex:column >
+                        <apex:commandLink action="{!removeProductFromCart}" value="Delete" reRender="productArea,cartArea">
+                            <apex:param value="{!productInCart.product.Id}" name="selectedProduct" assignTo="{! selectedProduct}"/>
+                        </apex:commandLink>
+                    </apex:column>
+                </apex:pageBlockTable>
+            </apex:pageBlock>
+        </apex:outputPanel>
+        
+        <apex:outputPanel Id="checkoutArea">
+            <apex:pageBlock rendered="{! showCheckout}">
+                <apex:pageBlockButtons location="bottom">
+                    <apex:commandButton value="Place Order" action="{! placeOrder}"/>
+                </apex:pageBlockButtons>
+                 <table style="width:100%">
+                    <tr>
+                        <td>
+                            Invoice No:#
+                        </td>
+                        
+                        <td style="text-align:right"> 
+                            Order Date: 
+                            <apex:outputtext value="{0, date}">
+                                <apex:param value="{!NOW()}"></apex:param>
+                            </apex:outputtext>
+                        </td>
+                    </tr>   
+                </table>
+                
+                <apex:pageBlockTable value="{! ProductsInCart}" var="productInCart">
+                    <apex:column value="{! productInCart.product.Name}"/>
+                    <apex:column value="{! productInCart.product.ProductCode}"/>
+                    <apex:column value="{! productInCart.quantity}" headerValue="Quantity"/>
+                    <apex:column value="{! productInCart.product.Price__c}" headerValue="Price Per Unit"/>
+                    
+                    <apex:column headerValue="Total Price">
+                        <apex:outputtext value="{0, number, currency}">
+                            <apex:param value="{! (productInCart.quantity) * (productInCart.product.price__c) }" />
+                            
+                        </apex:outputtext>
+                    </apex:column>
+                    
+                </apex:pageBlockTable>
+                <table style="width:100%">
+                    <tr>
+                        <td style="text-align:right">
+                            Total Amount: 
+                            <apex:outputtext value="{0, number, currency}">
+        						<apex:param value="{!totalAmount}"></apex:param>
+    						</apex:outputtext>
+                        </td>
+                    </tr>
+                    
+                </table>
+            </apex:pageBlock>
+        </apex:outputPanel>
+    </apex:form>
+</apex:page>
