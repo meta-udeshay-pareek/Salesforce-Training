@@ -1,0 +1,36 @@
+
+Question 1:
+
+			trigger accountTestTrigger on Account (before insert, before update) {
+					for(Account a: Trigger.new) {
+							List<Contact> contacts = [select id, salutation, firstname, lastname, email
+																				from Contact where accountId = :a.Id];
+							for(Contact c: contacts) {
+									System.debug('Contact Id[' + c.Id + '], FirstName[' + c.firstname + '],
+																LastName[' + c.lastname +']');
+									c.Description=c.salutation + ' ' + c.firstName + ' ' + c.lastname;
+									update c;
+							}
+					}
+			}
+
+		
+		
+Solution:
+
+			trigger accountTestTrigger on Account (before insert, before update) {
+					
+					List<Contact> contacts = [select id, salutation, firstname, lastname from Contact where Id IN :Trigger.new];
+					
+							for(Contact c: contacts) {
+									System.debug('Contact Id[' + c.Id + '], FirstName[' + c.firstname + '], LastName[' + c.lastname +']');
+									c.Description=c.salutation + ' ' + c.firstName + ' ' + c.lastname;
+							}
+							update contacts;
+					}
+			}
+
+			
+1. Bring the contact List query out of for loop and use 'IN' and get the required accoint ids.
+2. Removing email from the query as we are not using it any where.
+3. Update the whole list outside the for loop.

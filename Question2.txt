@@ -1,0 +1,64 @@
+
+
+Question 2:
+
+
+trigger accountTrigger on Account (before delete, before insert, before update) {
+	List<Opportunity> opptysClosedLost = [select id, name, closedate, stagename from Opportunity
+										  where accountId IN :Trigger.newMap.keySet() and StageName='Closed - Lost'];
+											
+	List<Opportunity> opptysClosedWon = [select id, name, closedate, stagename from Opportunity where
+										accountId IN :Trigger.newMap.keySet() and StageName='Closed - Won'];
+										
+	for(Account a : Trigger.new){
+			for(Opportunity o: opptysClosedLost){
+					if(o.accountid == a.id)
+							System.debug('Do more logic here...');
+			}
+			for(Opportunity o: opptysClosedWon){
+					if(o.accountid == a.id)
+						System.debug('Do more logic here...');
+			}
+	}
+}
+
+Solution :
+
+trigger accountTrigger on Account (before delete, before insert, before update) {
+	
+		List<Account> accountList = new List<Account>();
+    if(Trigger.isInsert) {
+        
+    }
+		
+		else if(Trigger.isDelete) {
+			
+			accountList = [SELECT Id,(SELECT id, name, closedate, stagename FROM Opportunity WHERE StageName = 'Closed - Lost' OR  StageName = 'Closed - Won') 
+											FROM Account
+											WHERE Id IN :Trigger.old];
+		}
+		
+		else{
+			accountList = [SELECT Id,(SELECT id, name, closedate, stagename FROM Opportunity WHERE StageName = 'Closed - Lost' OR  StageName = 'Closed - Won')
+											FROM Account
+											WHERE Id IN :Trigger.new];
+		}
+		
+		for(Account a : AccountList){
+        for(Opportunity o: a.Opportunities){
+            if(o.stageName == 'Closed Won')
+                System.debug('Do more logic here...');
+            if(o.stageName == 'Closed Lost')
+                System.dubug('Do more logic here...');
+        }
+        
+    }   
+}
+
+
+1. Creating a query for fetch account with Their Opportunities that are closed won/closed lost.
+2. When trigger is delete, using Trigger.old as Trigger.new won't be available.
+3. Instead of iterating through all the Opportunities and then checking if the opportunity is related to current account 
+   we can simply use the sub query to get the list of Opportunities that are related to the particular account.
+4.finally the opportunities can be further processed by if conditions to identify closed won/closed lost.
+5.5. If the trigger is Insert then we will do nothing as there won't be any id of the records.
