@@ -1,0 +1,12 @@
+<template>
+    <lightning-card title="Add Contact" icon-name="standard:contact">
+            <div class="slds-m-around_medium">
+                <lightning-input label="First Name" name="firstname" onchange={handleChange} ></lightning-input>
+                <lightning-input label="Last Name" name="lastname" onchange={handleChange}  required></lightning-input>
+                <lightning-input label="Email" type="email" name="email" onchange={handleChange} ></lightning-input>
+                <lightning-input label="Phone" pattern="[0-9]{10}" name="phone" onchange={handleChange} ></lightning-input>
+                <lightning-input label="Fax" name="fax" onchange={handleChange} ></lightning-input>
+                <lightning-button label="Create Contact" variant="brand" onclick={createContact}  ></lightning-button>
+            </div>
+    </lightning-card>
+</template>        
